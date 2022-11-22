@@ -1,0 +1,19 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Federation test app";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Welcome</h1>
+    <p>Choose IdP below to authenticate:</p>
+    <div class="row">
+        <div class="col-sm"></div>
+        <div class="list-group col-sm">
+            <a class="list-group-item list-group-item-action" href="~/Auth/Login/login">login.kungsbacka.se</a>
+            <a class="list-group-item list-group-item-action" href="~/Auth/Login/idp2">idp2.kungsbacka.se</a>
+            <a class="list-group-item list-group-item-action" href="~/Auth/Login/idp2test">idp2test.kungsbacka.se</a>
+        </div>
+        <div class="col-sm"></div>
+    </div>
+</div>
