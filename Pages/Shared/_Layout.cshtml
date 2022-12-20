@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/kbaidptest.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/nnfx-light.min.css" />
 </head>
 <body>
     <header>
@@ -19,7 +20,7 @@
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
-                        @if (((System.Security.Claims.ClaimsIdentity)User.Identity).IsAuthenticated)
+                        @if (User != null && User.Identity != null && ((System.Security.Claims.ClaimsIdentity)User.Identity).IsAuthenticated)
                         {
 <!--  Enable when I get logout to work properly
                             <li>
@@ -42,8 +43,16 @@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/highlight.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
+
+
+    <script>
+        $(document).ready(function () {
+            hljs.highlightAll();
+        });
+    </script>
 </body>
 </html>
