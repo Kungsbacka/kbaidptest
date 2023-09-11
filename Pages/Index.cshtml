@@ -3,6 +3,8 @@
 @{
     ViewData["Title"] = "Federation test app";
 }
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
 
 <div class="text-center">
     <h1 class="display-4">Welcome</h1>
@@ -10,9 +12,13 @@
     <div class="row">
         <div class="col-sm"></div>
         <div class="list-group col-sm">
-            <a class="list-group-item list-group-item-action" href="~/Auth/Login/login">login.kungsbacka.se</a>
-            <a class="list-group-item list-group-item-action" href="~/Auth/Login/idp2">idp2.kungsbacka.se</a>
-            <a class="list-group-item list-group-item-action" href="~/Auth/Login/idp2test">idp2test.kungsbacka.se</a>
+        @{
+            var list = Configuration.GetSection("IdpList").Get<IEnumerable<IdpListItem>>();
+            foreach (var item in list)
+            {
+                <a class="list-group-item list-group-item-action" href="~/Auth/Login/@item.Id">@item.DisplayName</a>
+            }
+        }
         </div>
         <div class="col-sm"></div>
     </div>

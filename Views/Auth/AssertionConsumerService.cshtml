@@ -1,0 +1,33 @@
+﻿@using System.Xml;
+@using System.Text;
+
+@{
+	ViewData["Title"] = "SAML Response";
+	Layout = "~/Pages/Shared/_Layout.cshtml";
+	string xml = "";
+	try
+	{
+		using MemoryStream memoryStream = new MemoryStream();
+		var xmlWriterSettings = new XmlWriterSettings()
+		{
+			Indent = true,
+			IndentChars = "   ",
+			ConformanceLevel = ConformanceLevel.Fragment
+		};			
+		using (var xmlWriter = XmlWriter.Create(memoryStream, xmlWriterSettings))
+		{
+			Model.WriteTo(xmlWriter);
+		}
+		memoryStream.Position = 0L;
+		xml = Encoding.UTF8.GetString(memoryStream.ToArray());
+	}
+	catch
+	{
+		xml = Model.OuterXml;
+	}
+}
+
+<h3>SAML Response</h3>
+<p>Om du kommer till den här sidan har inloggningen <u>misslyckats</u>. Nedan ser du SAML-biljetten som returnerades från IdP:n.</p>
+<hr />
+<pre><code class="language-xml">@xml</code></pre>
