@@ -10,23 +10,25 @@ namespace kbaidptest.Controllers
     [Route("Auth")]
     public class AuthController : Controller
     {
-        const string relayStateReturnUrl = "ReturnUrl";
         private readonly IConfiguration _config;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        public AuthController(IConfiguration config)
-        {           
-            _config = config;
+        public AuthController(IConfiguration config, IHttpClientFactory httpClientFactory)
+        {
+            _config = config ?? throw new ArgumentNullException(nameof(config));
+            _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
         }
 
         [Route("Login/{idp}")]
-        public IActionResult Login(string idp, string? returnUrl)
+        public async Task<IActionResult> Login(string idp, string? returnUrl)
         {
-            var samlConfig = _config.GetSamlConfig(idp);
-            var binding = new Saml2RedirectBinding();
-            binding.SetRelayStateQuery(
-                new Dictionary<string, string> { { relayStateReturnUrl, returnUrl ?? Url.Content("~/") } }
+            var samlConfig = await _config.GetSamlSignonConfig(
+                _httpClientFactory,
+                idp,
+                returnUrl ?? Url.Content("~/")
             );
-            return binding.Bind(new Saml2AuthnRequest(samlConfig)).ToActionResult();
+
+            return samlConfig.Bind(new Saml2AuthnRequest(samlConfig.Saml2Configuration));
         }
 
         [HttpPost("Logout/{idp}")]
@@ -37,18 +39,22 @@ namespace kbaidptest.Controllers
             {
                 return Redirect(Url.Content("~/"));
             }
-            var samlConfig = _config.GetSamlConfig(idp);
-            var binding = new Saml2PostBinding();
-            var saml2LogoutRequest = await new Saml2LogoutRequest(samlConfig, User).DeleteSession(HttpContext);
-            return binding.Bind(saml2LogoutRequest).ToActionResult();
+            var samlConfig = await _config.GetSamlLogoutConfig(_httpClientFactory, idp);
+
+            if (samlConfig == null)
+            {
+                return Redirect(Url.Content("~/"));
+            }
+
+            return samlConfig.Bind(new Saml2LogoutRequest(samlConfig.Saml2Configuration, User));
         }
 
         [Route("LoggedOut/{idp}")]
-        public IActionResult LoggedOut(string idp)
+        public async Task<IActionResult> LoggedOut(string idp)
         {
-            var samlConfig = _config.GetSamlConfig(idp);
-            var binding = new Saml2PostBinding();
-            binding.Unbind(Request.ToGenericHttpRequest(), new Saml2LogoutResponse(samlConfig));
+            var samlConfig = await _config.GetSamlLogoutConfig(_httpClientFactory, idp);
+
+            samlConfig?.Unbind(Request.ToGenericHttpRequest(), new Saml2LogoutResponse(samlConfig.Saml2Configuration));
 
             return Redirect(Url.Content("~/"));
         }
@@ -56,13 +62,18 @@ namespace kbaidptest.Controllers
         [Route("AssertionConsumerService/{idp}")]
         public async Task<IActionResult> AssertionConsumerService(string idp)
         {
-            var samlConfig = _config.GetSamlConfig(idp);
-            var binding = new Saml2PostBinding();
-            var saml2AuthnResponse = new Saml2AuthnResponse(samlConfig);
+            var samlConfig = _config.GetSamlAssertionConsumerConfig(idp);
+
+            if (samlConfig == null)
+            {
+                return Redirect(Url.Content("~/"));
+            }
+
+            var saml2AuthnResponse = new Saml2AuthnResponse(samlConfig.Saml2Configuration);
             var request = Request.ToGenericHttpRequest();
             try
             {
-                binding.Unbind(request, saml2AuthnResponse);
+                samlConfig.Unbind(request, saml2AuthnResponse);
             }
             catch
             {
@@ -71,9 +82,10 @@ namespace kbaidptest.Controllers
                 {
                     return View(doc);
                 }
+                return Redirect(Url.Content("~/Error"));
             }
             await saml2AuthnResponse.CreateSession(HttpContext,
-                claimsTransform: (claimsPrincipal) => ClaimsTransform.Transform(claimsPrincipal)
+                claimsTransform: (c) => ClaimsTransform.Transform(c)
             );
             return Redirect("~/Claims");
         }

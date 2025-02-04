@@ -1,12 +1,13 @@
 using ITfoxtec.Identity.Saml2.MvcCore.Configuration;
 using kbaidptest;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorPages();
 builder.Services.AddSingleton(o => { return new ClaimDescription(); });
 builder.Services.AddSaml2();
+builder.Services.AddHttpClient();
+
 var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
@@ -21,13 +22,9 @@ app.UseSaml2();
 app.UseAuthorization();
 app.MapRazorPages();
 
-app.UseEndpoints(endpoints =>
-{
-    endpoints.MapRazorPages();
-
-    endpoints.MapControllerRoute(
-        name: "default",
-        pattern: "{controller=Home}/{action=Index}/{id?}");
-});
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}"
+);
 
 app.Run();
